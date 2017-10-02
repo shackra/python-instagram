@@ -9,7 +9,8 @@ class ApiModel(object):
         # make dict keys all strings
         if entry is None:
             return ""
-        entry_str_dict = dict([(str(key), value) for key, value in entry.items()])
+        entry_str_dict = dict([(str(key), value)
+                               for key, value in entry.items()])
         return cls(**entry_str_dict)
 
     def __repr__(self):
@@ -38,6 +39,11 @@ class Image(ApiModel):
 
 
 class Video(Image):
+    def __init__(self, url, width, height, id=None):
+        self.id = None
+        self.url = url
+        self.height = height
+        self.width = width
 
     def __unicode__(self):
         return "Video: %s" % self.url
@@ -62,10 +68,8 @@ class Media(ApiModel):
         else:
             return self.videos['low_resolution'].url
 
-
     def get_thumbnail_url(self):
         return self.images['thumbnail'].url
-
 
     def __unicode__(self):
         return "Media: %s" % self.id
@@ -79,12 +83,14 @@ class Media(ApiModel):
 
         new_media.images = {}
         for version, version_info in six.iteritems(entry['images']):
-            new_media.images[version] = Image.object_from_dictionary(version_info)
+            new_media.images[version] = Image.object_from_dictionary(
+                version_info)
 
         if new_media.type == 'video':
             new_media.videos = {}
-            for version, version_info in six.iteritems(entry['videos']):
-                new_media.videos[version] = Video.object_from_dictionary(version_info)
+            for version, version_info in six.iteritems(entry.get('videos', {})):
+                new_media.videos[version] = Video.object_from_dictionary(
+                    version_info)
 
         if 'user_has_liked' in entry:
             new_media.user_has_liked = entry['user_has_liked']
@@ -96,10 +102,8 @@ class Media(ApiModel):
 
         new_media.comment_count = entry['comments']['count']
         new_media.comments = []
-        if "data" in entry["comments"]:
-            for comment in entry['comments']['data']:
-                new_media.comments.append(
-                    Comment.object_from_dictionary(comment))
+        for comment in entry['comments'].get('data', []):
+            new_media.comments.append(Comment.object_from_dictionary(comment))
 
         new_media.users_in_photo = []
         if entry.get('users_in_photo'):
@@ -188,8 +192,8 @@ class Location(ApiModel):
             point = Point(entry.get('latitude'),
                           entry.get('longitude'))
         location = Location(entry.get('id', 0),
-                       point=point,
-                       name=entry.get('name', ''))
+                            point=point,
+                            name=entry.get('name', ''))
         return location
 
     def __unicode__(self):
